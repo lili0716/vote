@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # vue-project
 
 This template should help get you started developing with Vue 3 in Vite.
@@ -40,3 +41,6 @@ yarn dev
 ```sh
 yarn build
 ```
+=======
+# vote
+>>>>>>> 4c56f419d8fb22e14ba288aa4b842a2cc3361630
