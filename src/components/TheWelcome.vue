@@ -28,6 +28,5 @@
   text-align: center;
   background-color: red;
   color: white;
-  padding: 2rem;
 }
 </style>
