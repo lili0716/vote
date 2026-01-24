@@ -33,6 +33,7 @@ import {
     NButton,
 } from "naive-ui";
 import { useAuthStore } from "../stores/auth";
+import { loginApi } from "../api";
 
 const router = useRouter();
 const message = useMessage();
@@ -49,7 +50,7 @@ const rules = {
     username: [
         {
             required: true,
-            message: "请输入账号",
+            message: "请输入工号",
             trigger: ["input", "blur"],
         },
     ],
@@ -60,18 +61,29 @@ const handleLogin = async () => {
         await formRef.value?.validate();
         loading.value = true;
 
-        // 模拟登录请求
-        setTimeout(() => {
-            loading.value = false;
-            // 写入登录态（Pinia + 持久化）
-            authStore.login(formData.username);
+        try {
+            // 调用登录接口
+            const response = await loginApi({
+                employeeId: formData.username,
+            });
+
+            // 保存登录态（使用后端返回的 token）
+            authStore.login(formData.username, response.token);
             message.success(`欢迎，${formData.username}！`);
+
             // 登录成功后：若有 redirect 则跳回，否则去首页
             const redirect = (router.currentRoute.value.query.redirect as string | undefined) || "/";
             router.push(redirect);
-        }, 1000);
+        } catch (error: any) {
+            // 处理登录失败
+            const errorMessage = error?.response?.data?.message || error?.message || "登录失败，请重试";
+            message.error(errorMessage);
+        } finally {
+            loading.value = false;
+        }
     } catch (error) {
         console.error("表单验证失败", error);
+        loading.value = false;
     }
 };
 </script>

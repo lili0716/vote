@@ -9,9 +9,9 @@ export const useAuthStore = defineStore(
 
     const isLoggedIn = computed(() => typeof token.value === "string" && token.value.trim().length > 0);
 
-    function login(name: string) {
-      // 这里先用 mock token；接真实接口时用后端返回 token 替换
-      token.value = `mock_token_${Date.now()}`;
+    function login(name: string, authToken?: string) {
+      // 使用后端返回的 token，如果没有则使用默认值
+      token.value = authToken || `mock_token_${Date.now()}`;
       username.value = name;
     }
 

@@ -10,10 +10,19 @@ const https: AxiosInstance = axios.create({
 // 请求拦截器
 https.interceptors.request.use(
   (config:any) => {
-    // 例如：添加 token
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer  $ {token}`;
+    // 从 Pinia store 获取 token
+    // 注意：这里需要动态获取，因为 Pinia store 可能在模块加载时还未初始化
+    try {
+      const authData = localStorage.getItem('pinia_auth');
+      if (authData) {
+        const parsed = JSON.parse(authData);
+        const token = parsed?.token;
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      }
+    } catch (error) {
+      console.warn('获取 token 失败:', error);
     }
     return config;
   },

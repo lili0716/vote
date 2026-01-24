@@ -11,10 +11,16 @@ const router = createRouter({
       name: 'login',
       component: () => import('../views/login.vue'),
     },
+    // {
+    //   path: '/',
+    //   name: 'home',
+    //   component: HomeView,
+    //   meta: { requiresAuth: true },
+    // },
     {
       path: '/',
-      name: 'home',
-      component: HomeView,
+      name: 'vote',
+      component: () => import('../views/VoteView.vue'),
       meta: { requiresAuth: true },
     },
     // {
