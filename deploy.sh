@@ -68,6 +68,28 @@ cd ..
 echo "10. 构建前端项目..."
 pnpm run build
 
+# 配置 Nginx
+echo "11. 配置 Nginx..."
+sudo apt install -y nginx
+
+# 复制 Nginx 配置文件
+sudo cp nginx.conf /etc/nginx/sites-available/vote
+
+# 创建符号链接
+sudo ln -sf /etc/nginx/sites-available/vote /etc/nginx/sites-enabled/
+
+# 测试 Nginx 配置
+sudo nginx -t
+
+# 重启 Nginx
+sudo systemctl restart nginx
+
+# 开放防火墙端口
+echo "12. 配置防火墙..."
+sudo ufw allow 80
+sudo ufw allow 443
+sudo ufw reload
+
 if [ $? -eq 0 ]; then
   echo "========================================"
   echo "前端构建成功！"

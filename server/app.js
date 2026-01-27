@@ -9,7 +9,10 @@ const syncRoutes = require('./routes/sync');
 const app = express();
 
 // 中间件配置
-app.use(cors());
+app.use(cors({
+  origin: 'http://vote.ringway.cn',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -37,8 +40,8 @@ app.use((err, req, res, next) => {
 
 // 启动服务器
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`服务器运行在 http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`服务器运行在 http://0.0.0.0:${PORT}`);
 });
 
 module.exports = app;
