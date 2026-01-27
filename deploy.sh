@@ -72,11 +72,14 @@ pnpm run build
 echo "11. 配置 Nginx..."
 sudo apt install -y nginx
 
-# 创建独立的 Nginx 配置文件目录
-sudo mkdir -p /etc/nginx/conf.d
+# 复制 Nginx 配置文件到 sites-available 目录
+sudo cp nginx.conf /etc/nginx/sites-available/vote.conf
 
-# 复制 Nginx 配置文件到 conf.d 目录
-sudo cp nginx.conf /etc/nginx/conf.d/vote.conf
+# 移除可能存在的旧配置符号链接
+sudo rm -f /etc/nginx/sites-enabled/vote* 2>/dev/null
+
+# 创建新的符号链接
+sudo ln -sf /etc/nginx/sites-available/vote.conf /etc/nginx/sites-enabled/
 
 # 测试 Nginx 配置
 sudo nginx -t
