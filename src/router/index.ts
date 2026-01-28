@@ -30,9 +30,21 @@ const router = createRouter({
           meta: { requiresAdmin: true },
         },
         {
+          path: 'database',
+          name: 'database',
+          component: () => import('../views/SyncView.vue'),
+          meta: { requiresAdmin: true },
+        },
+        {
           path: 'results',
           name: 'results',
           component: () => import('../views/ResultsView.vue'),
+          meta: { requiresAdmin: true },
+        },
+        {
+          path: 'cleanup',
+          name: 'cleanup',
+          component: () => import('../views/SyncView.vue'),
           meta: { requiresAdmin: true },
         },
       ],

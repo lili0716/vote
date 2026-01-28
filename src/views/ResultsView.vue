@@ -56,9 +56,9 @@ const columnsBestProgram = [
   {
     title: '排名',
     width: 80,
-    customRender: (_, __, index) => {
+    customRender: (date) => {
       return {
-        children: index + 1,
+        children: date.index + 1,
         attrs: {
           class: 'rank-cell'
         }
@@ -74,7 +74,9 @@ const columnsBestProgram = [
     title: '得票数',
     dataIndex: 'bestProgram',
     key: 'bestProgram',
-    customRender: (text) => text || 0
+    customRender: (date) => {
+      return typeof date.record[date.column.dataIndex] === 'number' ? date.record[date.column.dataIndex] : 0;
+    }
   }
 ];
 
@@ -82,9 +84,9 @@ const columnsBestPerformance = [
   {
     title: '排名',
     width: 80,
-    customRender: (_, __, index) => {
+    customRender: (date) => {
       return {
-        children: index + 1,
+        children: date.index + 1,
         attrs: {
           class: 'rank-cell'
         }
@@ -100,7 +102,9 @@ const columnsBestPerformance = [
     title: '得票数',
     dataIndex: 'bestPerformance',
     key: 'bestPerformance',
-    customRender: (text) => text || 0
+    customRender: (date) => {
+      return typeof date.record[date.column.dataIndex] === 'number' ? date.record[date.column.dataIndex] : 0;
+    }
   }
 ];
 
@@ -108,9 +112,9 @@ const columnsBestCreativity = [
   {
     title: '排名',
     width: 80,
-    customRender: (_, __, index) => {
+    customRender: (date) => {
       return {
-        children: index + 1,
+        children: date.index + 1,
         attrs: {
           class: 'rank-cell'
         }
@@ -126,7 +130,9 @@ const columnsBestCreativity = [
     title: '得票数',
     dataIndex: 'bestCreativity',
     key: 'bestCreativity',
-    customRender: (text) => text || 0
+    customRender: (date) => {
+      return typeof date.record[date.column.dataIndex] === 'number' ? date.record[date.column.dataIndex] : 0;
+    }
   }
 ];
 

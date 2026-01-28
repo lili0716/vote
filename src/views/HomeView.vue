@@ -29,9 +29,19 @@ const menuItems = computed(() => {
         icon: "📊",
       },
       {
-        label: "数据库同步",
+        label: "Excel导入",
         key: "sync",
+        icon: "📁",
+      },
+      {
+        label: "数据库同步",
+        key: "database",
         icon: "🔄",
+      },
+      {
+        label: "数据清洗",
+        key: "cleanup",
+        icon: "🧹",
       }
     );
   }
@@ -61,9 +71,13 @@ const handleUserAction = (e: any) => {
 
 const getPageTitle = () => {
   if (route.name === "sync") {
+    return "Excel导入";
+  } else if (route.name === "database") {
     return "数据库同步";
   } else if (route.name === "results") {
     return "投票结果";
+  } else if (route.name === "cleanup") {
+    return "数据清洗";
   } else if (route.name === "admin") {
     return "管理后台";
   } else {
@@ -79,9 +93,8 @@ const getPageTitle = () => {
     <a-layout-sider
       v-if="authStore.isAdmin"
       :width="240"
-      :collapsed-width="64"
-      collapsible
-      breakpoint="lg"
+      :collapsible="false"
+      :trigger="null"
     >
       <div class="logo">
         <h2>🎭 年会投票</h2>
@@ -91,7 +104,6 @@ const getPageTitle = () => {
         :selected-keys="[activeKey]"
         @select="handleMenuSelect"
         mode="inline"
-        :collapsed-width="64"
         :theme="'dark'"
       />
     </a-layout-sider>

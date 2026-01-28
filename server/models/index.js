@@ -17,7 +17,7 @@ User.hasMany(VoteRecord, {
 
 // 同步数据库模型
 sequelize.sync({
-  alter: true
+  force: false
 }).then(async () => {
   console.log('数据库模型同步成功');
   

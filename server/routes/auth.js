@@ -61,11 +61,8 @@ router.post('/', async (req, res) => {
     let user = await User.findOne({ where: { employeeId: formattedEmployeeId } });
     
     if (!user) {
-      // 如果用户不存在，创建新用户
-      user = await User.create({
-        name: formattedEmployeeId, // 使用格式化后的工号作为默认姓名
-        employeeId: formattedEmployeeId
-      });
+      // 如果用户不存在，返回错误
+      return res.status(401).json({ message: '工号未注册' });
     }
     
     // 获取用户的投票记录

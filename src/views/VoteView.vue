@@ -178,6 +178,17 @@ const handleVote = (awardId: string, programId: number) => {
         // 投票成功，更新本地状态
         voteStore.vote(awardId, String(programId));
         authStore.updateVoteStatus(true);
+        
+        // 添加投票记录到 authStore，用于回显显示
+        const voteRecord = {
+          id: Date.now(), // 临时ID
+          programId: programId,
+          programName: programName,
+          awardType: awardId,
+          createdAt: new Date().toISOString()
+        };
+        authStore.voteRecords.push(voteRecord);
+        
         message.success(
           `投票成功！您已为"${awardName}"投票，选择的节目是"${programName}"`
         );

@@ -52,7 +52,65 @@
         </a-form>
       </a-card>
 
-      <!-- 同步结果 -->
+      <!-- Excel导入用户 -->
+      <a-card title="Excel导入用户" :bordered="false">
+        <div class="excel-import-container">
+          <a-upload
+            v-model:file-list="fileList"
+            :multiple="false"
+            :before-upload="beforeUpload"
+            :disabled="importing"
+            accept=".xlsx,.xls"
+          >
+            <a-button type="primary" :loading="importing">
+              <template #icon>
+                <upload-outlined />
+              </template>
+              选择Excel文件
+            </a-button>
+          </a-upload>
+          <p class="upload-hint">支持.xlsx和.xls格式，文件大小不超过10MB</p>
+          <p class="upload-hint">Excel格式要求：包含name（姓名）和employeeId（工号）列</p>
+          <a-button
+            type="primary"
+            @click="handleImport"
+            :loading="importing"
+            :disabled="!fileList.length || importing"
+            style="margin-top: 10px"
+          >
+            开始导入
+          </a-button>
+        </div>
+      </a-card>
+
+      <!-- 导入结果 -->
+      <a-card v-if="importResult" title="导入结果" :bordered="false" class="result-card">
+        <a-descriptions :column="1" bordered>
+          <a-descriptions-item label="总记录数">
+            <a-tag color="blue">{{ importResult.total }}</a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="成功导入">
+            <a-tag color="green">{{ importResult.success }}</a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="导入失败">
+            <a-tag color="red">{{ importResult.failed }}</a-tag>
+          </a-descriptions-item>
+        </a-descriptions>
+
+        <div
+          v-if="importResult.importedUsers && importResult.importedUsers.length > 0"
+          class="synced-users"
+        >
+          <h4>已导入的用户：</h4>
+          <a-table
+            :columns="columns"
+            :data-source="importResult.importedUsers"
+            :scroll="{ y: 300 }"
+          />
+        </div>
+      </a-card>
+
+      <!-- 投票结果 -->
       <a-card v-if="syncResult" title="同步结果" :bordered="false" class="result-card">
         <a-descriptions :column="1" bordered>
           <a-descriptions-item label="总记录数">
@@ -137,7 +195,9 @@ import {
   Descriptions,
   Table,
   Spin,
+  Upload,
 } from "ant-design-vue";
+import { UploadOutlined } from "@ant-design/icons-vue";
 import { syncUsersApi, getVoteResultsApi } from "../api";
 
 const formRef = ref();
@@ -145,6 +205,11 @@ const syncing = ref(false);
 const loadingResults = ref(false);
 const syncResult = ref<any>(null);
 const voteResults = ref<any>(null);
+
+// Excel导入相关变量
+const fileList = ref<any[]>([]);
+const importing = ref(false);
+const importResult = ref<any>(null);
 
 const formData = reactive({
   host: "",
@@ -232,6 +297,65 @@ const loadVoteResults = async () => {
     message.error("获取投票结果失败");
   } finally {
     loadingResults.value = false;
+  }
+};
+
+// 文件上传前验证
+const beforeUpload = (file: any) => {
+  const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+                  file.type === 'application/vnd.ms-excel';
+  if (!isExcel) {
+    message.error('只支持Excel文件(.xlsx, .xls)');
+    return false;
+  }
+  const isLt10M = file.size / 1024 / 1024 < 10;
+  if (!isLt10M) {
+    message.error('文件大小不能超过10MB');
+    return false;
+  }
+  return false; // 阻止自动上传，使用手动上传
+};
+
+// 处理Excel导入
+const handleImport = async () => {
+  if (!fileList.value || fileList.value.length === 0) {
+    message.error('请先选择Excel文件');
+    return;
+  }
+
+  try {
+    importing.value = true;
+    importResult.value = null;
+
+    const file = fileList.value[0].originFileObj;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/admin/import-users', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || '导入失败');
+    }
+
+    const result = await response.json();
+    
+    if (result.results) {
+      importResult.value = result.results;
+      message.success(`导入完成！成功导入 ${result.results.success} 条记录`);
+      // 清空文件列表
+      fileList.value = [];
+    } else if (result.error) {
+      message.error(`导入失败: ${result.error}`);
+    }
+  } catch (error: any) {
+    const errorMessage = error?.message || '导入失败，请稍后重试';
+    message.error(errorMessage);
+  } finally {
+    importing.value = false;
   }
 };
 
@@ -332,6 +456,18 @@ onMounted(() => {
   .vote-counts {
     display: flex;
     gap: 10px;
+  }
+}
+
+.excel-import-container {
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 8px;
+  
+  .upload-hint {
+    color: #666;
+    font-size: 14px;
+    margin: 10px 0;
   }
 }
 </style>
