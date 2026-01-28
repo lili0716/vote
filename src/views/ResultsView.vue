@@ -288,7 +288,7 @@ const updateChart = (
         },
       },
     ],
-    animationEasing: "elasticOut",
+    animationEasing: "elasticOut" as any,
     animationDelayUpdate: function (idx: number) {
       return idx * 5;
     },
