@@ -6,6 +6,12 @@ echo "========================================"
 echo "开始部署投票系统"
 echo "========================================"
 
+# 更换为中国镜像源，加速下载
+echo "0. 更换为中国镜像源..."
+sudo sed -i 's/security.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list.d/security.sources.list
+sudo sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+sudo sed -i 's/ports.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+
 # 安装依赖
 echo "1. 安装必要依赖..."
 sudo apt install -y curl git build-essential
@@ -127,7 +133,7 @@ sudo ufw reload
 
 # 创建启动脚本
 echo "12. 创建启动脚本..."
-cat > start.sh << EOF
+cat > start.sh << 'EOF'
 #!/bin/bash
 
 # 启动脚本 - 先启动后端，再启动前端
@@ -171,7 +177,7 @@ echo "========================================"
 EOF
 
 # 创建停止脚本
-cat > stop.sh << EOF
+cat > stop.sh << 'EOF'
 #!/bin/bash
 
 # 停止脚本 - 停止前后端服务
