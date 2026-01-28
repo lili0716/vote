@@ -36,7 +36,7 @@ npm install -g pnpm
 # 克隆项目
 echo "4. 克隆项目代码..."
 if [ ! -d "vote" ]; then
-  git clone git@github.com:lili0716/vote.git vote
+  git clone https://github.com/lili0716/vote.git vote
 fi
 
 cd vote
