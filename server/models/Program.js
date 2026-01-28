@@ -11,6 +11,10 @@ const Program = sequelize.define('Program', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  isGroup: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
   bestProgram: {
     type: DataTypes.INTEGER,
     defaultValue: 0

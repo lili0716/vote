@@ -18,7 +18,6 @@ const menuItems = computed(() => {
     items.push({
       label: "投票",
       key: "vote",
-      icon: "🗳️",
     });
   } else {
     // 如果是管理员，显示管理功能
@@ -26,22 +25,18 @@ const menuItems = computed(() => {
       {
         label: "投票结果",
         key: "results",
-        icon: "📊",
       },
       {
         label: "Excel导入",
         key: "sync",
-        icon: "📁",
       },
       {
         label: "数据库同步",
         key: "database",
-        icon: "🔄",
       },
       {
         label: "数据清洗",
         key: "cleanup",
-        icon: "🧹",
       }
     );
   }

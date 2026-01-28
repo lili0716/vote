@@ -10,7 +10,7 @@ const app = express();
 
 // 中间件配置
 app.use(cors({
-  origin: 'http://vote.ringway.cn',
+  origin: ['http://vote.ringway.cn', 'http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true
 }));
 app.use(express.json());

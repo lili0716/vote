@@ -25,7 +25,7 @@ pm2 stop all 2>/dev/null
 # 启动后端服务器
 echo "启动后端服务器..."
 cd server
-npm start &
+npm run dev &
 sleep 3
 
 # 启动前端预览服务器

@@ -58,6 +58,7 @@ export interface ProgramResponse {
   programs?: Array<{
     id: number
     name: string
+    isGroup: boolean
     bestProgram: number
     bestPerformance: number
     bestCreativity: number

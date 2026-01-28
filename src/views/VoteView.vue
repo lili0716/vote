@@ -6,7 +6,9 @@
         <template #message>
           <div>
             <strong>⚠️ 投票规则</strong>
-            <p>您只能选择一个奖项进行投票，一旦投票后将无法更改</p>
+            <p>每个奖项可以选择一个节目，一旦投票后将无法更改</p>
+            <p>只有被标记为团体的节目才能参与最佳团体奖评选</p>
+            <p>在一个奖项中选择的节目，在其他奖项中将变为不可选择状态</p>
           </div>
         </template>
       </a-alert>
@@ -46,57 +48,69 @@
         v-for="award in awards"
         :key="award.id"
         class="award-card"
-        :class="{
-          'award-voted': voteStore.isAwardVoted(award.id),
-          'award-disabled': displayHasVoted && !voteStore.isAwardVoted(award.id),
-        }"
+      :class="{
+        'award-disabled': authStore.hasVoted,
+      }"
       >
         <div class="award-header">
           <div class="award-icon">
             <span class="award-emoji">{{ award.icon }}</span>
           </div>
           <h2 class="award-title">{{ award.name }}</h2>
-          <div v-if="voteStore.isAwardVoted(award.id)" class="voted-badge">✅ 已投票</div>
         </div>
 
         <div class="programs-grid">
-          <div
-            v-for="program in programs"
-            :key="program.id"
-            class="program-card"
-            :class="{
-              'program-selected':
-                voteStore.isAwardVoted(award.id) &&
-                voteStore.votedProgramId === String(program.id),
-              'program-disabled':
-                displayHasVoted &&
-                (voteStore.votedProgramId !== String(program.id) ||
-                  !voteStore.isAwardVoted(award.id)),
-            }"
-            @click="handleVote(award.id, program.id)"
-          >
-            <div class="program-number">{{ program.id }}</div>
-            <div class="program-name">{{ program.name }}</div>
             <div
-              v-if="
-                voteStore.isAwardVoted(award.id) &&
-                voteStore.votedProgramId === String(program.id)
-              "
-              class="selected-mark"
+              v-for="program in (award.id === 'bestProgram' ? programs.filter(p => p.isGroup) : programs)"
+              :key="program.id"
+              class="program-card"
+              :class="{
+                'program-selected':
+                  voteStore.getVotedProgram(award.id) === String(program.id),
+                'program-disabled':
+                  voteStore.isProgramVotedInOtherAwards(award.id, String(program.id)),
+              }"
+              @click="handleSelectProgram(award.id, program.id)"
             >
-              ✓
+              <div class="program-number">{{ program.id }}</div>
+              <div class="program-name">
+                {{ program.name }}
+              </div>
+              <div
+                v-if="voteStore.getVotedProgram(award.id) === String(program.id)"
+                class="selected-mark"
+              >
+                ✓
+              </div>
             </div>
           </div>
-        </div>
       </div>
+    </div>
+
+    <!-- 悬浮投票按钮 -->
+    <div v-if="!authStore.hasVoted" class="floating-vote-button">
+      <a-button
+        type="primary"
+        size="large"
+        shape="circle"
+        :loading="voting"
+        :disabled="!voteStore.hasVotedInAnyAward()"
+        @click="handleSubmitVote"
+      >
+        <template #icon>
+          <CheckOutlined />
+        </template>
+      </a-button>
+      <div class="floating-button-text">确认投票</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, h } from "vue";
 import { message, Modal } from "ant-design-vue";
 import { Alert, Spin, Tag } from "ant-design-vue";
+import { CheckOutlined } from "@ant-design/icons-vue";
 import { useVoteStore } from "../stores/vote";
 import { useAuthStore } from "../stores/auth";
 import { voteApi, getProgramsApi } from "../api";
@@ -105,12 +119,12 @@ const voteStore = useVoteStore();
 const authStore = useAuthStore();
 const voting = ref(false);
 const loading = ref(true);
-const programs = ref<Array<{ id: number; name: string }>>([]);
+const programs = ref<Array<{ id: number; name: string; isGroup: boolean }>>([]);
 
 // 奖项列表（对应后端的awardTypes）
 const awards = [
-  { id: "bestProgram", name: "最佳节目奖", icon: "🏆" },
-  { id: "bestPerformance", name: "最佳表演奖", icon: "🎤" },
+  { id: "bestProgram", name: "最佳团体奖", icon: "🏆" },
+  { id: "bestPerformance", name: "最具氛围奖", icon: "🎤" },
   { id: "bestCreativity", name: "最佳创意奖", icon: "💡" },
 ];
 
@@ -123,6 +137,7 @@ const loadPrograms = async () => {
       programs.value = response.programs.map((p) => ({
         id: p.id,
         name: p.name,
+        isGroup: p.isGroup || false,
       }));
     }
   } catch (error) {
@@ -133,8 +148,42 @@ const loadPrograms = async () => {
   }
 };
 
-// 处理投票
-const handleVote = (awardId: string, programId: number) => {
+// 处理节目选择
+const handleSelectProgram = (awardId: string, programId: number) => {
+  // 检查用户是否已登录
+  if (!authStore.userId) {
+    message.warning("请先登录再投票");
+    return;
+  }
+
+  // 如果已投票，不允许再选择
+  if (authStore.hasVoted) {
+    message.warning("您已经投票，无法再次选择！");
+    return;
+  }
+
+  // 检查是否是最佳团体奖，只有团体节目才能选择
+  if (awardId === "bestProgram") {
+    const program = programs.value.find((p) => p.id === programId);
+    if (!program?.isGroup) {
+      message.warning("只有团体节目才能参与最佳团体奖评选");
+      return;
+    }
+  }
+
+  // 检查该节目是否在其他奖项中已被选择
+  if (voteStore.isProgramVotedInOtherAwards(awardId, String(programId))) {
+    message.warning("该节目已在其他奖项中被选择，无法再次选择");
+    return;
+  }
+
+  // 更新投票状态
+  voteStore.vote(awardId, String(programId));
+  message.success(`已选择 ${getAwardName(awardId)}: ${getProgramName(programId)}`);
+};
+
+// 处理提交投票
+const handleSubmitVote = () => {
   // 检查用户是否已登录
   if (!authStore.userId) {
     message.warning("请先登录再投票");
@@ -142,56 +191,85 @@ const handleVote = (awardId: string, programId: number) => {
   }
 
   // 如果已投票，不允许再投票
-  if (voteStore.hasVoted || authStore.hasVoted) {
+  if (authStore.hasVoted) {
     message.warning("您已经投票，无法再次投票！");
     return;
   }
 
-  // 如果正在投票中，不允许重复点击
-  if (voting.value) {
+  // 检查是否为每个奖项都选择了节目
+  const selectedAwards = awards.filter((award) => voteStore.getVotedProgram(award.id));
+  if (selectedAwards.length === 0) {
+    message.warning("请至少为一个奖项选择节目");
     return;
   }
 
-  // 显示确认弹窗
-  const awardName = getAwardName(awardId);
-  const programName = getProgramName(programId);
+  // 构建投票记录，用于弹窗显示
+  const voteSelections = selectedAwards.map((award) => {
+    const programId = voteStore.getVotedProgram(award.id);
+    const programName = getProgramName(Number(programId));
+    return {
+      awardName: award.name,
+      programName: programName,
+    };
+  });
 
+  // 显示确认弹窗
+  const contentNode = h('div', null, [
+    h('p', null, '您确定要提交以下投票吗？投票后将无法更改。'),
+    h('div', { style: { marginTop: '16px' } }, [
+      ...voteSelections.map((selection) => {
+        const award = awards.find(a => a.name === selection.awardName);
+        const icon = award?.icon || '';
+        return h('div', { style: { marginBottom: '8px' } }, [
+          icon + ' ' + selection.awardName + ': ' + selection.programName
+        ]);
+      })
+    ])
+  ]);
+  
   Modal.confirm({
     title: "确认投票",
-    content: `您确定要为"${awardName}"投票，选择的节目是"${programName}"吗？投票后将无法更改。`,
+    content: contentNode,
     okText: "确认投票",
     cancelText: "取消",
     onOk: async () => {
       // 确认投票，调用后端接口
       voting.value = true;
       try {
+        // 构建投票数据
+        const votes = selectedAwards.map((award) => {
+          const programId = voteStore.getVotedProgram(award.id);
+          return {
+            programId: Number(programId),
+            awardType: award.id,
+          };
+        });
+
         const response = await voteApi({
           userId: authStore.userId!,
-          votes: [
-            {
-              programId: programId,
-              awardType: awardId,
-            },
-          ],
+          votes: votes,
         });
 
         // 投票成功，更新本地状态
-        voteStore.vote(awardId, String(programId));
         authStore.updateVoteStatus(true);
-        
+
         // 添加投票记录到 authStore，用于回显显示
-        const voteRecord = {
-          id: Date.now(), // 临时ID
-          programId: programId,
-          programName: programName,
-          awardType: awardId,
-          createdAt: new Date().toISOString()
-        };
-        authStore.voteRecords.push(voteRecord);
-        
-        message.success(
-          `投票成功！您已为"${awardName}"投票，选择的节目是"${programName}"`
-        );
+        const voteRecords = selectedAwards.map((award) => {
+          const programId = voteStore.getVotedProgram(award.id);
+          const programName = getProgramName(Number(programId));
+          return {
+            id: Date.now() + Math.random(), // 临时ID
+            programId: Number(programId),
+            programName: programName,
+            awardType: award.id,
+            createdAt: new Date().toISOString(),
+          };
+        });
+        voteRecords.forEach((record) => {
+          authStore.voteRecords.push(record);
+        });
+
+        message.success("投票成功！感谢您的参与");
       } catch (error: any) {
         // 处理投票失败
         const errorMessage =
@@ -218,20 +296,8 @@ const getProgramName = (programId: number) => {
   return programs.value.find((p) => p.id === programId)?.name || "";
 };
 
-// 获取已投票的奖项名称
-const getVotedAwardName = () => {
-  if (!voteStore.votedAwardId) return "";
-  return getAwardName(voteStore.votedAwardId);
-};
-
-// 获取已投票的节目名称
-const getVotedProgramName = () => {
-  if (!voteStore.votedProgramId) return "";
-  return getProgramName(Number(voteStore.votedProgramId));
-};
-
-// 是否显示已投票状态（优先使用authStore的状态）
-const displayHasVoted = computed(() => authStore.hasVoted || voteStore.hasVoted);
+// 是否显示已投票状态（只在用户实际提交投票后显示）
+const displayHasVoted = computed(() => authStore.hasVoted);
 
 // 初始化：加载节目列表
 onMounted(() => {
@@ -438,13 +504,47 @@ onMounted(() => {
     font-size: 22px;
   }
 
-  .programs-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 10px;
-  }
-
   .program-card {
     padding: 15px;
+  }
+
+  .floating-vote-button {
+    right: 15px;
+    bottom: 15px;
+  }
+}
+
+// 悬浮投票按钮
+.floating-vote-button {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: pulse 2s infinite;
+}
+
+.floating-button-text {
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 </style>
