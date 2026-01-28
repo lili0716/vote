@@ -6,16 +6,12 @@ echo "========================================"
 echo "开始部署投票系统"
 echo "========================================"
 
-# 更新系统包
-echo "1. 更新系统包..."
-sudo apt update && sudo apt upgrade -y
-
 # 安装依赖
-echo "2. 安装必要依赖..."
+echo "1. 安装必要依赖..."
 sudo apt install -y curl git build-essential
 
 # 安装 Node.js (使用 nvm)
-echo "3. 安装 Node.js..."
+echo "2. 安装 Node.js..."
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
 # 激活 nvm
@@ -28,11 +24,11 @@ nvm install 22.16.0
 nvm use 22.16.0
 
 # 安装 pnpm
-echo "4. 安装 pnpm..."
+echo "3. 安装 pnpm..."
 npm install -g pnpm
 
 # 克隆项目
-echo "5. 克隆项目代码..."
+echo "4. 克隆项目代码..."
 if [ ! -d "vote" ]; then
   git clone git@github.com:lili0716/vote.git vote
 fi
@@ -40,20 +36,20 @@ fi
 cd vote
 
 # 安装前端依赖
-echo "6. 安装前端依赖..."
+echo "5. 安装前端依赖..."
 pnpm install
 
 # 安装后端依赖
-echo "7. 安装后端依赖..."
+echo "6. 安装后端依赖..."
 cd server
 npm install
 
 # 创建必要的目录
-echo "8. 创建必要的目录..."
+echo "7. 创建必要的目录..."
 mkdir -p uploads
 
 # 配置环境变量
-echo "9. 配置环境变量..."
+echo "8. 配置环境变量..."
 cat > .env << EOF
 # 服务器配置
 PORT=3001
@@ -65,11 +61,11 @@ EOF
 cd ..
 
 # 构建前端项目
-echo "10. 构建前端项目..."
+echo "9. 构建前端项目..."
 pnpm run build
 
 # 配置 Nginx
-echo "11. 配置 Nginx..."
+echo "10. 配置 Nginx..."
 sudo apt install -y nginx
 
 # 创建 Nginx 配置文件
@@ -123,14 +119,14 @@ sudo nginx -t
 sudo systemctl restart nginx
 
 # 开放防火墙端口
-echo "12. 配置防火墙..."
+echo "11. 配置防火墙..."
 sudo ufw allow 80
 sudo ufw allow 443
 sudo ufw allow 3001
 sudo ufw reload
 
 # 创建启动脚本
-echo "13. 创建启动脚本..."
+echo "12. 创建启动脚本..."
 cat > start.sh << EOF
 #!/bin/bash
 
